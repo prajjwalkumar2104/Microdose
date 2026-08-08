@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
+const jakarta = Plus_Jakarta_Sans({ 
+  subsets: ["latin"], 
+  variable: "--font-sans",
+});
+
+const fraunces = Fraunces({ 
+  subsets: ["latin"], 
+  variable: "--font-serif",
+  axes: ["SOFT", "WONK"], // Gives it that premium editorial look
+});
 
 export const metadata: Metadata = {
   title: "Unprompted | Minimalist Speaking Practice",
@@ -17,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased min-h-screen`}>
+      <body className={`${jakarta.variable} ${fraunces.variable} font-sans antialiased min-h-screen`}>
         {children}
       </body>
     </html>
