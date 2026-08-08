@@ -9,38 +9,54 @@ export interface Topic {
   title: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  icon: string; // <-- New property added here
+}
+
+export interface Topic {
+  id: string;
+  categoryId: string;
+  title: string;
+}
+
+// Full list with icons matching the minimalist aesthetic
 export const categories: Category[] = [
-  { id: "tech", name: "Technology & AI" },
-  { id: "bio", name: "Biology & Genetics" },
-  { id: "phil", name: "Philosophy" },
-  { id: "psych", name: "Psychology" },
-  { id: "astro", name: "Astronomy & Physics" },
-  { id: "cs", name: "Computer Science" },
-  { id: "hist", name: "History & Civilization" },
-  { id: "econ", name: "Economics & Finance" },
-  { id: "math", name: "Mathematics & Logic" },
-  { id: "art", name: "Art & Architecture" },
-  { id: "lit", name: "Literature & Language" },
-  { id: "strat", name: "Strategy & Game Theory" },
-  { id: "soc", name: "Sociology & Culture" },
-  { id: "eco", name: "Environment & Ecology" },
-  { id: "med", name: "Medicine & Health" },
-  { id: "pol", name: "Political Science" },
-  { id: "law", name: "Law & Ethics" },
-  { id: "mus", name: "Music & Sound" },
-  { id: "pop", name: "Entertainment & Media" },
-  { id: "prod", name: "Productivity & Systems" },
-  { id: "webdev", name: "Web Engineering & Architecture" },
-  { id: "algo", name: "Algorithms & Computation" },
-  { id: "cyber", name: "Cybersecurity & Privacy" },
-  { id: "web3", name: "Blockchain & Decentralization" },
-  { id: "travel", name: "Geography & Urbanism" },
-  { id: "game", name: "Game Design & Mechanics" },
-  { id: "food", name: "Food Science & Gastronomy" },
-  { id: "myth", name: "Mythology & Folklore" },
-  { id: "biz", name: "Startups & Innovation" },
-  { id: "space", name: "Aerospace & Engineering" }
+  { id: "gen", name: "General", icon: "✨" },
+  { id: "tech", name: "Technology & AI", icon: "🤖" },
+  { id: "bio", name: "Biology & Genetics", icon: "🧬" },
+  { id: "phil", name: "Philosophy", icon: "🤔" },
+  { id: "psych", name: "Psychology", icon: "🧠" },
+  { id: "astro", name: "Astronomy & Physics", icon: "🔭" },
+  { id: "cs", name: "Computer Science", icon: "💻" },
+  { id: "hist", name: "History & Civilization", icon: "🏛️" },
+  { id: "econ", name: "Economics & Finance", icon: "📈" },
+  { id: "math", name: "Mathematics & Logic", icon: "📐" },
+  { id: "art", name: "Art & Architecture", icon: "🎨" },
+  { id: "lit", name: "Literature & Language", icon: "📚" },
+  { id: "strat", name: "Strategy & Game Theory", icon: "♟️" },
+  { id: "soc", name: "Sociology & Culture", icon: "🌍" },
+  { id: "eco", name: "Environment & Ecology", icon: "🌱" },
+  { id: "med", name: "Medicine & Health", icon: "⚕️" },
+  { id: "pol", name: "Political Science", icon: "⚖️" },
+  { id: "law", name: "Law & Ethics", icon: "📜" },
+  { id: "mus", name: "Music & Sound", icon: "🎵" },
+  { id: "pop", name: "Entertainment & Media", icon: "🍿" },
+  { id: "prod", name: "Productivity & Systems", icon: "⚡" },
+  { id: "webdev", name: "Web Engineering", icon: "🌐" },
+  { id: "algo", name: "Algorithms & Computation", icon: "⚙️" },
+  { id: "cyber", name: "Cybersecurity & Privacy", icon: "🛡️" },
+  { id: "web3", name: "Blockchain & Web3", icon: "🔗" },
+  { id: "travel", name: "Geography & Urbanism", icon: "🗺️" },
+  { id: "game", name: "Game Design", icon: "🎮" },
+  { id: "food", name: "Food Science", icon: "🍳" },
+  { id: "myth", name: "Mythology & Folklore", icon: "🐉" },
+  { id: "biz", name: "Startups & Innovation", icon: "🚀" },
+  { id: "space", name: "Aerospace", icon: "🛰️" }
 ];
+
+// ... keep your topics array exactly the same below this
 
 export const topics: Topic[] = [
   // --- 1. TECHNOLOGY & AI ---
