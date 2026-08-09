@@ -10,26 +10,42 @@
   --text-secondary: #94a3b8;
 }
 
+/* Replace the existing .theme-paper block with this */
+/* Replace the existing .theme-paper block with this */
+/* Replace the existing .theme-paper block with this */
 .theme-paper {
-  --bg-color: #f8fafc;
-  --text-primary: #0f172a;
-  --text-topic: #020617;
-  --accent: #2f4f4f;
-  --text-secondary: #475569;
+  --bg-color: #090514; /* Deep cosmic purple/black */
+  --text-primary: #e4e4e7;
+  --text-topic: #d8b4fe; /* Energetic neon purple */
+  --accent: #c084fc;
+  --text-secondary: #8b5cf6;
 }
-
 .theme-nostalgia {
-  --bg-color: #2a2b27;
-  --text-primary: #f3f0e0;
-  --text-topic: #fefde8;
-  --accent: #d07c60;
-  --text-secondary: #a3a398;
+  --bg-color: #030712; /* Pitch black with a hint of blue */
+  --text-primary: #f8fafc; /* Pure starlight white */
+  --text-topic: #38bdf8; /* Bright icy cyan */
+  --accent: #0284c7; /* Deep space blue */
+  --text-secondary: #475569; /* Slate */
 }
 
 body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Premium Typographic Rendering */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Elegant Text Selection */
+::selection {
+  background-color: var(--accent);
+  color: var(--bg-color);
+  text-shadow: none;
 }
 /* Custom Scrollbar for the new dropdown */
 .custom-scrollbar::-webkit-scrollbar {
