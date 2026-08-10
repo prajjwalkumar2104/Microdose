@@ -10,9 +10,7 @@
   --text-secondary: #94a3b8;
 }
 
-/* Replace the existing .theme-paper block with this */
-/* Replace the existing .theme-paper block with this */
-/* Replace the existing .theme-paper block with this */
+
 .theme-paper {
   --bg-color: #090514; /* Deep cosmic purple/black */
   --text-primary: #e4e4e7;
@@ -20,6 +18,7 @@
   --accent: #c084fc;
   --text-secondary: #8b5cf6;
 }
+
 .theme-nostalgia {
   --bg-color: #030712; /* Pitch black with a hint of blue */
   --text-primary: #f8fafc; /* Pure starlight white */

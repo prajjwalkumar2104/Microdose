@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata ,Viewport } from "next";
 import { Plus_Jakarta_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
@@ -22,8 +22,13 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Microdose",
   },
+};
+
+// Next.js now requires themeColor to live here instead!
+export const viewport: Viewport = {
   themeColor: "#090514",
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{
