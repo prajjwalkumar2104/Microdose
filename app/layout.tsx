@@ -14,10 +14,16 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "Unprompted | Minimalist Speaking Practice",
+  title: "Microdose | Minimalist Speaking Practice",
   description: "Minimal prep. Try to think quick on your feet.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Microdose",
+  },
+  themeColor: "#090514",
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{

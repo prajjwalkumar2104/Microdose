@@ -32,6 +32,14 @@ export default function Home() {
   // Mobile Screen Sleep Fix
   useWakeLock(isRunning);
 
+  useEffect(() => {
+    if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch((err) => {
+        console.error("Service Worker registration failed: ", err);
+      });
+    }
+  }, []);
+
   // Theme Toggle Logic
   useEffect(() => {
     document.body.classList.add("bg-background", "text-primary", "selection:bg-accent/30");
@@ -69,6 +77,7 @@ export default function Home() {
           break;
       }
     };
+
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
