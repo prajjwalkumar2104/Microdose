@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Moon, Sun, BookOpen, ChevronDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
+import { Moon, Sun, BookOpen, ChevronDown, Settings, X } from "lucide-react";
 import { categories, topics, Topic } from "@/lib/data";
 import { useAccurateTimer } from "@/hooks/useAccurateTimer";
 import { playTick, playChime } from "@/lib/audio";
@@ -11,8 +11,49 @@ import { useWakeLock } from "@/hooks/useWakeLock";
 type Phase = "SETUP" | "SPINNING" | "RULE_GATE" | "RESEARCH" | "SPEECH" | "COMPLETE";
 type Theme = "midnight" | "paper" | "nostalgia";
 
-const RESEARCH_TIME = 10 * 60;
-const SPEECH_TIME = 2 * 60;
+// --- ADVANCED MAGNETIC PHYSICS WRAPPER ---
+function MagneticWrapper({ children, pull = 0.2 }: { children: React.ReactNode, pull?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // The spring physics: tightly coiled, fast snapback, slightly heavy
+  const springConfig = { damping: 15, stiffness: 250, mass: 0.2 };
+  const springX = useSpring(x, springConfig);
+  const springY = useSpring(y, springConfig);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const { clientX, clientY } = e;
+    const { height, width, left, top } = ref.current.getBoundingClientRect();
+    
+    // Calculate the distance from the exact center of the button
+    const middleX = clientX - (left + width / 2);
+    const middleY = clientY - (top + height / 2);
+    
+    // Apply the magnetic pull
+    x.set(middleX * pull);
+    y.set(middleY * pull);
+  };
+
+  const handleMouseLeave = () => {
+    // Snap back to absolute center when the cursor leaves
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ x: springX, y: springY }}
+      className="relative flex items-center justify-center z-10"
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 export default function Home() {
   const [theme, setTheme] = useState<Theme>("midnight");
@@ -21,10 +62,39 @@ export default function Home() {
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
   const [spinText, setSpinText] = useState("Drawing...");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+  // Settings State
+  const [speechTime, setSpeechTime] = useState(2); // In minutes
+  const [researchTime, setResearchTime] = useState(10); // In minutes
+  const [isMuted, setIsMuted] = useState(false);
+  const [hasLoadedSettings, setHasLoadedSettings] = useState(false);
+
+  // Load Settings from LocalStorage on Mount
+  useEffect(() => {
+    const saved = localStorage.getItem("microdose_settings");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.speechTime) setSpeechTime(parsed.speechTime);
+      if (parsed.researchTime) setResearchTime(parsed.researchTime);
+      if (parsed.isMuted !== undefined) setIsMuted(parsed.isMuted);
+    }
+    setHasLoadedSettings(true);
+  }, []);
+
+  // Save Settings whenever they change
+  useEffect(() => {
+    if (hasLoadedSettings) {
+      localStorage.setItem(
+        "microdose_settings",
+        JSON.stringify({ speechTime, researchTime, isMuted })
+      );
+    }
+  }, [speechTime, researchTime, isMuted, hasLoadedSettings]);
 
   // Timer & Audio
   const { remaining, start, reset, isRunning } = useAccurateTimer(0, () => {
-    playChime();
+    if (!isMuted) playChime();
     if (phase === "RESEARCH") transitionTo("SPEECH");
     if (phase === "SPEECH") transitionTo("COMPLETE");
   });
@@ -43,25 +113,22 @@ export default function Home() {
   // Theme Toggle Logic
   useEffect(() => {
     document.body.classList.add("bg-background", "text-primary", "selection:bg-accent/30");
-    document.body.classList.remove("theme-paper", "theme-nostalgia");
-    
-    if (theme !== "midnight") {
-      document.body.classList.add(`theme-${theme}`);
-    }
+    document.body.classList.remove("theme-midnight", "theme-paper", "theme-nostalgia");
+    document.body.classList.add(`theme-${theme}`);
   }, [theme]);
 
   // Pro Keyboard Shortcuts (Still active silently in the background)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Prevent shortcuts if the custom category dropdown is currently open
-      if (isDropdownOpen) return;
+      // Prevent shortcuts if custom dropdowns or modals are open
+      if (isDropdownOpen || isSettingsOpen) return;
 
       switch (e.code) {
         case "Space":
-          e.preventDefault(); // Prevents aggressive page scrolling
+          e.preventDefault(); 
           if (phase === "SETUP") handleSpin();
           else if (phase === "RULE_GATE") transitionTo("RESEARCH");
-          else if (phase === "SPEECH" && !isRunning && remaining === SPEECH_TIME) start();
+          else if (phase === "SPEECH" && !isRunning && remaining === speechTime * 60) start();
           else if (phase === "COMPLETE") transitionTo("SETUP");
           break;
           
@@ -78,10 +145,9 @@ export default function Home() {
       }
     };
 
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [phase, isRunning, remaining, selectedCatId, isDropdownOpen, reset]); 
+  }, [phase, isRunning, remaining, selectedCatId, isDropdownOpen, isSettingsOpen, reset, speechTime]); 
 
   const cycleTheme = () => {
     const themes: Theme[] = ["midnight", "paper", "nostalgia"];
@@ -99,7 +165,7 @@ export default function Home() {
     let ticks = 0;
     const interval = setInterval(() => {
       setSpinText(topics[Math.floor(Math.random() * topics.length)].title);
-      playTick(); 
+      if (!isMuted) playTick(); 
       ticks++;
       if (ticks > 15) {
         clearInterval(interval);
@@ -112,11 +178,11 @@ export default function Home() {
   const transitionTo = (newPhase: Phase) => {
     setPhase(newPhase);
     if (newPhase === "RESEARCH") {
-      reset(RESEARCH_TIME);
+      reset(researchTime * 60);
       start();
     }
     if (newPhase === "SPEECH") {
-      reset(SPEECH_TIME);
+      reset(speechTime * 60);
     }
   };
 
@@ -234,7 +300,7 @@ export default function Home() {
               exit={{ opacity: 0 }}
               className="flex flex-col items-center w-full max-w-4xl"
             >
-              <p className="text-accent text-xs font-bold tracking-[0.4em] uppercase mb-8 opacity-80">Drawing...</p>
+              <p className="text-accent text-l font-bold tracking-[0.4em] uppercase mb-8 opacity-80">Drawing...</p>
               <h2 className="font-serif text-4xl md:text-6xl lg:text-7xl text-topic text-center blur-[3px] opacity-50 leading-[1.1] tracking-tighter">
                 {spinText}
               </h2>
@@ -251,31 +317,49 @@ export default function Home() {
               transition={{ type: "spring", stiffness: 300, damping: 25 }}
               className="flex flex-col items-center w-full max-w-4xl text-center"
             >
-              <p className="text-accent text-xs font-bold tracking-[0.4em] uppercase mb-8 opacity-80">Your Topic</p>
+              <p className="text-accent text-l font-bold tracking-[0.4em] uppercase mb-8 opacity-80">Your Topic</p>
               <h2 className="font-serif text-4xl md:text-5xl lg:text-7xl text-topic mb-14 leading-[1.1] tracking-tighter select-text">
                 {currentTopic.title}
               </h2>
               
-              {/* Reroll & Start Buttons (Side by Side) */}
+              {/* Reroll & Start Buttons & Settings */}
+              {/* Reroll & Start Buttons & Settings */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleSpin}
-                  className="group relative overflow-hidden bg-transparent border border-primary/20 text-primary/80 px-10 py-4 rounded-full font-semibold tracking-widest uppercase text-xs hover:border-primary/50 hover:text-primary transition-all duration-300"
-                >
-                  Spin Again
-                </motion.button>
+                
+                <MagneticWrapper pull={0.15}>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleSpin}
+                    className="group relative overflow-hidden bg-transparent border border-primary/20 text-primary/80 px-10 py-4 rounded-full font-semibold tracking-widest uppercase text-xs hover:border-primary/50 hover:text-primary transition-all duration-300"
+                  >
+                    Spin Again
+                  </motion.button>
+                </MagneticWrapper>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => transitionTo("RESEARCH")}
-                  className="group relative overflow-hidden bg-background/20 backdrop-blur-sm border border-primary/20 text-primary px-12 py-4 rounded-full font-semibold tracking-widest uppercase text-xs hover:border-accent hover:text-accent transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.05)]"
-                >
-                  <span className="relative z-10">Start 10 Min Research</span>
-                  <div className="absolute inset-0 bg-accent/10 translate-y-full group-hover:translate-y-0 transition-transform duration-400 ease-out" />
-                </motion.button>
+                <MagneticWrapper pull={0.1}>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => transitionTo("RESEARCH")}
+                    className="group relative overflow-hidden bg-background/20 backdrop-blur-sm border border-primary/20 text-primary px-12 py-4 rounded-full font-semibold tracking-widest uppercase text-xs hover:border-accent hover:text-accent transition-all duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.05)]"
+                  >
+                    <span className="relative z-10">Start {researchTime} Min Research</span>
+                    <div className="absolute inset-0 bg-accent/10 translate-y-full group-hover:translate-y-0 transition-transform duration-400 ease-out" />
+                  </motion.button>
+                </MagneticWrapper>
+
+                <MagneticWrapper pull={0.3}>
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="p-4 rounded-full bg-background/20 backdrop-blur-sm border border-primary/20 text-secondary hover:text-primary hover:border-primary/50 transition-all duration-300"
+                  >
+                    <Settings size={18} />
+                  </motion.button>
+                </MagneticWrapper>
+
               </div>
             </motion.div>
           )}
@@ -306,7 +390,7 @@ export default function Home() {
                     strokeDasharray="300%"
                     initial={{ strokeDashoffset: "0%" }}
                     animate={{
-                      strokeDashoffset: `calc(300% - (300% * ${remaining}) / ${phase === "RESEARCH" ? RESEARCH_TIME : SPEECH_TIME})`
+                      strokeDashoffset: `calc(300% - (300% * ${remaining}) / ${phase === "RESEARCH" ? researchTime * 60 : speechTime * 60})`
                     }}
                     transition={{ type: "tween", ease: "easeOut", duration: 0.8 }}
                     strokeLinecap="round"
@@ -325,7 +409,7 @@ export default function Home() {
                   Finished early? Skip to speech
                 </button>
               ) : (
-                !isRunning && remaining === SPEECH_TIME && (
+                !isRunning && remaining === speechTime * 60 && (
                   <motion.button
                     whileHover={{ y: -2, boxShadow: "0 20px 40px rgba(217,119,87,0.25)" }}
                     whileTap={{ scale: 0.97 }}
@@ -376,6 +460,111 @@ export default function Home() {
           {theme === "nostalgia" && <BookOpen size={18} />}
         </motion.button>
       </div>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <div className="absolute inset-0" onClick={() => setIsSettingsOpen(false)} />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative w-full max-w-md bg-black/40 border border-white/10 rounded-3xl p-8 shadow-[0_40px_80px_rgba(0,0,0,0.5)] backdrop-blur-2xl"
+            >
+              <button 
+                onClick={() => setIsSettingsOpen(false)}
+                className="absolute top-6 right-6 text-secondary hover:text-primary transition-colors"
+              >
+                <X size={20} />
+              </button>
+
+              <div className="mb-10">
+                <h2 className="font-serif text-3xl text-topic mb-2 tracking-tight">Settings</h2>
+                <p className="text-secondary/80 text-sm font-medium tracking-wide">Timer lengths in whole minutes.</p>
+              </div>
+
+              <div className="space-y-10">
+                <div>
+                  <div className="flex justify-between items-end mb-4">
+                    <label className="text-accent text-[11px] font-bold tracking-[0.2em] uppercase">Speech</label>
+                    <span className="font-serif text-2xl text-primary">{speechTime} min</span>
+                  </div>
+                  <input 
+                    type="range" min="1" max="10" step="1" 
+                    value={speechTime} onChange={(e) => setSpeechTime(Number(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer outline-none transition-all duration-300"
+                    style={{ accentColor: 'var(--accent)' }}
+                  />
+                  <div className="flex justify-between text-secondary/50 text-[10px] tracking-widest mt-3">
+                    <span>1 min</span>
+                    <span>10 min</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-end mb-4">
+                    <label className="text-accent text-[11px] font-bold tracking-[0.2em] uppercase">Research</label>
+                    <span className="font-serif text-2xl text-primary">{researchTime} min</span>
+                  </div>
+                  <input 
+                    type="range" min="1" max="60" step="1" 
+                    value={researchTime} onChange={(e) => setResearchTime(Number(e.target.value))}
+                    className="w-full h-1.5 bg-white/10 rounded-full appearance-none cursor-pointer outline-none transition-all duration-300"
+                    style={{ accentColor: 'var(--accent)' }}
+                  />
+                  <div className="flex justify-between text-secondary/50 text-[10px] tracking-widest mt-3 mb-1">
+                    <span>1 min</span>
+                    <span>60 min</span>
+                  </div>
+                  <p className="text-secondary/70 text-xs font-medium">Deep research only</p>
+                </div>
+
+                <div className="pt-2 border-t border-white/10">
+                  <label className="flex items-center gap-4 cursor-pointer group py-2">
+                    <div className="relative flex items-center justify-center w-5 h-5 rounded border border-white/20 group-hover:border-accent transition-colors overflow-hidden">
+                      <input 
+                        type="checkbox" 
+                        checked={isMuted} 
+                        onChange={(e) => setIsMuted(e.target.checked)}
+                        className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      <motion.div 
+                        initial={false}
+                        animate={{ scale: isMuted ? 1 : 0, opacity: isMuted ? 1 : 0 }}
+                        className="w-3 h-3 bg-accent rounded-sm"
+                      />
+                    </div>
+                    <span className="text-primary/90 text-sm font-medium tracking-wide group-hover:text-primary transition-colors">
+                      Mute sound effects
+                    </span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="mt-12 pt-6 flex flex-col gap-4">
+                <p className="text-secondary/50 text-xs font-medium text-center">Saved for next time.</p>
+                <motion.button
+                  whileHover={{ scale: 1.02, boxShadow: "0 10px 20px rgba(0,0,0,0.2)" }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="w-full bg-accent text-background py-4 rounded-xl font-bold tracking-[0.1em] uppercase text-xs shadow-lg transition-all duration-300"
+                >
+                  Done
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
