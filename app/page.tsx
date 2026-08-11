@@ -6,6 +6,7 @@ import { Moon, Sun, BookOpen, ChevronDown, Settings, X } from "lucide-react";
 import { categories, topics, Topic } from "@/lib/data";
 import { useAccurateTimer } from "@/hooks/useAccurateTimer";
 import { playTick, playChime } from "@/lib/audio";
+import { triggerTickVibration, triggerDoneVibration } from "@/lib/haptics";
 import { useWakeLock } from "@/hooks/useWakeLock";
 
 type Phase = "SETUP" | "SPINNING" | "RULE_GATE" | "RESEARCH" | "SPEECH" | "COMPLETE";
@@ -95,6 +96,7 @@ export default function Home() {
   // Timer & Audio
   const { remaining, start, reset, isRunning } = useAccurateTimer(0, () => {
     if (!isMuted) playChime();
+    triggerDoneVibration();
     if (phase === "RESEARCH") transitionTo("SPEECH");
     if (phase === "SPEECH") transitionTo("COMPLETE");
   });
@@ -166,6 +168,7 @@ export default function Home() {
     const interval = setInterval(() => {
       setSpinText(topics[Math.floor(Math.random() * topics.length)].title);
       if (!isMuted) playTick(); 
+      triggerTickVibration();
       ticks++;
       if (ticks > 15) {
         clearInterval(interval);
